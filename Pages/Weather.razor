@@ -1,11 +1,12 @@
 ﻿@page "/weather"
+@page "/"
 @inject HttpClient Http
 
 <PageTitle>Weather</PageTitle>
 
 <h1>Weather</h1>
 
-<p>This component demonstrates fetching data from the server.</p>
+<p>This component demonstrates scrollto limits.</p>
 
 @if (forecasts == null)
 {
@@ -13,26 +14,66 @@
 }
 else
 {
-    <DataGrid TItem="WeatherForecast" Data="forecasts" FixedHeader FixedHeaderDataGridMaxHeight="200px">
-        <DataGridColumns>
-            <DataGridColumn Field="@nameof(WeatherForecast.Date)" Caption="Date" />
-            <DataGridColumn Field="@nameof(WeatherForecast.TemperatureC)" Caption="Temp. (C)" />
-            <DataGridColumn Field="@nameof(WeatherForecast.TemperatureF)" Caption="Temp. (F)" />
-            <DataGridColumn Field="@nameof(WeatherForecast.Summary)" Caption="Summary" />
-        </DataGridColumns>
-
-
-    </DataGrid>
-
+    <DataGrid @ref="_gridRef" TItem="WeatherForecast" Data="forecasts" FixedHeader FixedHeaderDataGridMaxHeight="200px" SelectedRow="_selectedRow" SelectedRowChanged="@((row)=> _selectedRow = row)">
+            <DataGridColumns>
+                <DataGridColumn Field="@nameof(WeatherForecast.Date)" Caption="Date" />
+                <DataGridColumn Field="@nameof(WeatherForecast.TemperatureC)" Caption="Temp. (C)" />
+                <DataGridColumn Field="@nameof(WeatherForecast.TemperatureF)" Caption="Temp. (F)" />
+                <DataGridColumn Field="@nameof(WeatherForecast.Summary)" Caption="Summary" />
+            </DataGridColumns>
+        </DataGrid>
+    <Button Color="Color.Secondary" Clicked="@ScrollMax">Scroll max</Button>
+    <Button Color="Color.Secondary" Clicked="@ScrollUp"><Icon Name="IconName.SortUp"/></Button>
+    <Button Color="Color.Secondary" Clicked="@ScrollDown"><Icon Name="IconName.SortDown" /></Button>
 
 }
 
 @code {
     private WeatherForecast[]? forecasts;
+    private DataGrid<WeatherForecast> _gridRef;
+    private int _scrollPosition = 0;
+    private WeatherForecast? _selectedRow;
 
     protected override async Task OnInitializedAsync()
     {
         forecasts = await Http.GetFromJsonAsync<WeatherForecast[]>("sample-data/weather.json");
+    }
+
+    private void ScrollUp()
+    {
+        if(_scrollPosition > 0)
+        {
+            _scrollPosition--;
+            _gridRef.ScrollToRow(_scrollPosition);
+            _selectedRow = forecasts[_scrollPosition];
+        }
+    }
+
+    private void ScrollDown()
+    {
+        if (_scrollPosition < forecasts.Count()-1)
+        {
+            _scrollPosition++;
+            _gridRef.ScrollToRow(_scrollPosition);
+            _selectedRow = forecasts[_scrollPosition];
+        }
+    }
+
+    private void ScrollMax()
+    {        
+        if (_scrollPosition == 0)
+        {
+            _scrollPosition = forecasts.Count() - 1; 
+            _selectedRow = forecasts[_scrollPosition];
+            _gridRef.ScrollToRow(_scrollPosition); // Scroll to the first row (if any)
+        }
+        else
+        {         
+            _scrollPosition = 0;
+            _selectedRow = forecasts[_scrollPosition];
+            _gridRef.ScrollToRow(_scrollPosition); // Scroll to the first row (if any)
+        }
+        StateHasChanged();
     }
 
     public class WeatherForecast
